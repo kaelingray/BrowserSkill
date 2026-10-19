@@ -1,0 +1,57 @@
+name: opencode
+
+# Comment triggers (distinct on purpose; bare /oc and /opencode are ignored):
+#   /oc-openai <task>  -> OpenAI model (secret OPENAI_API_KEY)
+#   /oc-zen <task>     -> OpenCode Zen model (secret OPENCODE_API_KEY)
+# Requires the OpenCode GitHub App: https://github.com/apps/opencode-agent
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+permissions: {}
+
+jobs:
+  opencode-openai:
+    if: |
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
+      contains(github.event.comment.body, '/oc-openai')
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Run OpenCode (OpenAI)
+        uses: anomalyco/opencode/github@latest
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        with:
+          model: openai/gpt-5
+          mentions: /oc-openai
+
+  opencode-zen:
+    if: |
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
+      contains(github.event.comment.body, '/oc-zen')
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Run OpenCode (OpenCode Zen)
+        uses: anomalyco/opencode/github@latest
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        with:
+          model: opencode/claude-sonnet-4-5
+          mentions: /oc-zen
